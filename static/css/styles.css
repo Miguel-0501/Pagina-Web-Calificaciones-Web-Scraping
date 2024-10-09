@@ -1,0 +1,39 @@
+.custom-img-size {
+    width: 100%;
+}
+
+.social-icon {
+    color: #cccccc;
+    margin: 0 5px;
+    font-size: 30px;
+}
+
+.social-icon-facebook,
+.social-icon-instagram,
+.social-icon-tiwtter,
+.social-icon-linkedin,
+.social-icon-github {
+    color: #cccccc;
+    margin: 0 5px;
+    font-size: 30px;
+}
+
+.social-icon-github:hover {
+    color: #ffffff;
+}
+
+.social-icon-facebook:hover {
+    color: #3b5998;
+}
+
+.social-icon-instagram:hover {
+    color: #e1306c;
+}
+
+.social-icon-tiwtter:hover {
+    color: #1da1f2;
+}
+
+.social-icon-linkedin:hover {
+    color: #0077b5;
+}
