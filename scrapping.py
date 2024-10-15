@@ -13,10 +13,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def setup_driver():
     chrome_options = Options()
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--headless")  # Ejecutar en modo headless
+    chrome_options.add_argument("--headless")  
     return webdriver.Chrome(options=chrome_options)
 
-def get_table(driver, url):
+def obtener_tabla(driver, url):
     driver.get(url)
     logging.info("Esperando a que la página cargue...")
     return WebDriverWait(driver, 20).until(
@@ -25,56 +25,61 @@ def get_table(driver, url):
 
 def extract_data(row):
     try:
-        return {
-            'class': row.find_element(By.CLASS_NAME, 'response').text.strip(),
-            'score': row.find_element(By.CLASS_NAME, 'score').text.strip(),
-            'date': row.find_element(By.CLASS_NAME, 'date').text.strip(),
-            'comment': row.find_element(By.CLASS_NAME, 'commentsParagraph').text.strip() or "No hay comentario"
+        score = row.find_element(By.CLASS_NAME, 'score').text.strip()
+        # Convertir el score a un float y verificar si es mayor o igual a 8
+        if float(score) >= 8:
+            return {
+                'class': row.find_element(By.CLASS_NAME, 'response').text.strip(),
+                'score': row.find_element(By.CLASS_NAME, 'score').text.strip(),
+                'date': row.find_element(By.CLASS_NAME, 'date').text.strip(),
+                'comment': row.find_element(By.CLASS_NAME, 'commentsParagraph').text.strip() or "No hay comentario"
         }
+        else:
+            return None #Retorna none si el score es menor a 8
     except Exception as e:
         logging.error(f"Error al procesar una fila: {e}")
         return None
     
-def scrape_calificaciones():
-    url = 'https://www.misprofesores.com/profesores/Gustavo-Adolfo-Alonso-Silverio_86282'
+def get_paginas_links(driver):
+    paginas = driver.find_element(By.CLASS_NAME, 'pagination')
+    links = paginas.find_elements(By.TAG_NAME, 'a')
+    return [link.get_attribute('href') for link in links if link.get_attribute('href')]
+
+
+def scrape_all_pages():
+    base_url = 'https://www.misprofesores.com/profesores/Rene-Vazquez-Jimenez_37626'
     driver = setup_driver()
-    
-    try:
-        table = get_table(driver, url)
-        rows = table.find_elements(By.TAG_NAME, 'tr')[1:]  # Ignoramos la primera fila (encabezado)
-        logging.info(f"Número de filas encontradas: {len(rows)}")
+    datos = []
 
-        data = [extract_data(row) for row in rows if extract_data(row) is not None]
-        
-        return data
+    try: 
+        for page in range(1, 20): #Scrapear de la 1 hasta la 19
+            url = f"{base_url}?pag={page}"  # Corregido: Cambiado '?' por '?pag='
+            logging.info(f"Scraping página {page}")
 
+            table = obtener_tabla(driver, url)
+            rows = table.find_elements(By.TAG_NAME, 'tr')[1:]
+
+            page_data = [data for data in (extract_data(row) for row in rows) if data is not None]
+
+            datos.extend(page_data)
+
+            logging.info(f"Extraídas {len(page_data)} entradas de la página {page}")
+
+        return datos
     except Exception as e:
         logging.error(f"Error durante la ejecución: {e}")
-        return []
+        return datos
     finally:
         driver.quit()
 
-def main():
-    url = 'https://www.misprofesores.com/profesores/Gustavo-Adolfo-Alonso-Silverio_86282'
-    driver = setup_driver()
-    
-    try:
-        table = get_table(driver, url)
-        rows = table.find_elements(By.TAG_NAME, 'tr')[1:]  # Ignoramos la primera fila (encabezado)
-        logging.info(f"Número de filas encontradas: {len(rows)}")
+def main(): 
+    data = scrape_all_pages()
 
-        data = [extract_data(row) for row in rows if extract_data(row) is not None]
+    df = pd.DataFrame(data)
+    df.to_csv('datos_de_tablas.csv', index=False, encoding='utf-8-sig')
 
-        df = pd.DataFrame(data)
-        df.to_csv('data.csv', index=False, encoding='utf-8-sig')
-        
-        logging.info(f"Número total de entradas extraídas: {len(data)}")
-        logging.info(f"Datos guardados en 'data.csv'")
+    logging.info(f"Número total de entradas extraídas: {len(data)}")
+    logging.info(f"Datos guardados en 'datos_de_tablas.csv'")
 
-    except Exception as e:
-        logging.error(f"Error durante la ejecución: {e}")
-    finally:
-        driver.quit()
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -3,7 +3,7 @@ from flask_mail import Mail, Message
 import os 
 from flask_sqlalchemy import SQLAlchemy
 from models import db, Calificacion
-from scrapping import scrape_calificaciones
+from scrapping import scrape_all_pages
 
 app = Flask(__name__)
 
@@ -46,28 +46,27 @@ def send_email():
     
     return redirect(url_for('index'))
 
-@app.route('/actualizar_calificaciones')
-def actualizar_calificaciones():
-    datos_scraping = scrape_calificaciones()
-    for dato in datos_scraping:
-        calificacion = Calificacion(
-            clase=dato['class'],
-            calificacion=dato['score'],
-            fecha=dato['date'],
-            comentario=dato['comment']
-        )
-        db.session.add(calificacion)
-    db.session.commit()
-    return "Calificaciones actualizadas"
+# @app.route('/actualizar_calificaciones')
+# def actualizar_calificaciones():
+#     datos_scraping = scrape_calificaciones()
+#     for dato in datos_scraping:
+#         calificacion = Calificacion(
+#             clase=dato['class'],
+#             calificacion=dato['score'],
+#             fecha=dato['date'],
+#             comentario=dato['comment']
+#         )
+#         db.session.add(calificacion)
+#     db.session.commit()
+#     return "Calificaciones actualizadas"
 
 @app.route('/calificaciones')
 def calificaciones():
     try:
-        data = scrape_calificaciones()
+        data = scrape_all_pages()  
         return render_template('calificaciones.html', results=data)
     except Exception as e:
         print(f"Error al obtener calificaciones: {e}")
         return render_template('calificaciones.html', results=[], error="No se pudieron obtener las calificaciones")
-
 if __name__ == '__main__':
     app.run(debug=True)
