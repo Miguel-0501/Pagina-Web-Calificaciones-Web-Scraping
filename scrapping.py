@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 import pandas as pd
 import time
 import logging
@@ -11,9 +11,11 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def setup_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--headless")  
+    chrome_options = ChromeOptions()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--window-size=1920,1080")
     return webdriver.Chrome(options=chrome_options)
 
 def obtener_tabla(driver, url):
@@ -23,7 +25,7 @@ def obtener_tabla(driver, url):
         EC.presence_of_element_located((By.XPATH, "//table[contains(@class, 'table')]"))
     )
 
-def extract_data(row):
+def extraer_datos(row):
     try:
         score = row.find_element(By.CLASS_NAME, 'score').text.strip()
         # Convertir el score a un float y verificar si es mayor o igual a 8
@@ -46,20 +48,20 @@ def get_paginas_links(driver):
     return [link.get_attribute('href') for link in links if link.get_attribute('href')]
 
 
-def scrape_all_pages():
+def scrape_todas_las_paginas():
     base_url = 'https://www.misprofesores.com/profesores/Rene-Vazquez-Jimenez_37626'
     driver = setup_driver()
     datos = []
 
     try: 
         for page in range(1, 20): #Scrapear de la 1 hasta la 19
-            url = f"{base_url}?pag={page}"  # Corregido: Cambiado '?' por '?pag='
+            url = f"{base_url}?pag={page}"  
             logging.info(f"Scraping página {page}")
 
             table = obtener_tabla(driver, url)
             rows = table.find_elements(By.TAG_NAME, 'tr')[1:]
 
-            page_data = [data for data in (extract_data(row) for row in rows) if data is not None]
+            page_data = [data for data in (extraer_datos(row) for row in rows) if data is not None]
 
             datos.extend(page_data)
 
@@ -73,7 +75,7 @@ def scrape_all_pages():
         driver.quit()
 
 def main(): 
-    data = scrape_all_pages()
+    data = scrape_todas_las_paginas()
 
     df = pd.DataFrame(data)
     df.to_csv('datos_de_tablas.csv', index=False, encoding='utf-8-sig')

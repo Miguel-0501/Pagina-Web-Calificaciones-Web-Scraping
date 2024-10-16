@@ -1,18 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_mail import Mail, Message
 import os 
-from flask_sqlalchemy import SQLAlchemy
-from models import db, Calificacion
-from scrapping import scrape_all_pages
+from scrapping import scrape_todas_las_paginas
 
 app = Flask(__name__)
 
-# Configuración de la base de datos
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'calificaciones.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db.init_app(app)
 
 # Configuración de correo (usa variables de entorno en producción)
 app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'sandbox.smtp.mailtrap.io')
@@ -46,24 +38,11 @@ def send_email():
     
     return redirect(url_for('index'))
 
-# @app.route('/actualizar_calificaciones')
-# def actualizar_calificaciones():
-#     datos_scraping = scrape_calificaciones()
-#     for dato in datos_scraping:
-#         calificacion = Calificacion(
-#             clase=dato['class'],
-#             calificacion=dato['score'],
-#             fecha=dato['date'],
-#             comentario=dato['comment']
-#         )
-#         db.session.add(calificacion)
-#     db.session.commit()
-#     return "Calificaciones actualizadas"
 
 @app.route('/calificaciones')
 def calificaciones():
     try:
-        data = scrape_all_pages()  
+        data = scrape_todas_las_paginas()  
         return render_template('calificaciones.html', results=data)
     except Exception as e:
         print(f"Error al obtener calificaciones: {e}")
