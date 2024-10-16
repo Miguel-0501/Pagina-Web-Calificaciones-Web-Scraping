@@ -48,4 +48,4 @@ def calificaciones():
         print(f"Error al obtener calificaciones: {e}")
         return render_template('calificaciones.html', results=[], error="No se pudieron obtener las calificaciones")
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
